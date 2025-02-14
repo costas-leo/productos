@@ -2,7 +2,9 @@ from flask import Flask
 from Productos.infrastructure.routes.productoRoutes import producto_router
 
 app = Flask(__name__)
-app.register_blueprint(producto_router)  # Registra las rutas de productos
+
+# Registrar las rutas
+app.register_blueprint(producto_router)
 
 if __name__ == "__main__":
     app.run(debug=True)

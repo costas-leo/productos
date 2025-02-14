@@ -4,77 +4,73 @@ from Productos.domain.interface.productoRepository import ProductoRepositorio
 from Productos.infrastructure.database.conexion import Conexion
 
 
-class ProductoRepositorioMySQL:
-    def __init__(self):
-        # Obtiene una conexión real a la base de datos usando la clase Conexion
-        self.db = Conexion.obtener_conexion()
-        self.cursor = self.db.cursor(dictionary=True)
+class ProductoRepositorioMySQL(ProductoRepositorio):
 
-    def crear(self, producto):
-        try:
-            query = """
-            INSERT INTO productos (nombre, descripcion, precio, stock, categoria)
-            VALUES (%s, %s, %s, %s, %s)
-            """
-            values = (producto.nombre, producto.descripcion, producto.precio, producto.stock, producto.categoria)
-            self.cursor.execute(query, values)
-            self.db.commit()
-        except Exception as e:
-            self.db.rollback()
-            print(f"Error al crear producto: {e}")
+    def crear(self, producto: Producto) -> None:
+        conexion = Conexion.obtener_conexion()
+        cursor = conexion.cursor()
+        query = "INSERT INTO productos (nombre, descripcion, precio, stock, categoria) VALUES (%s, %s, %s, %s, %s)"
+        valores = (producto.nombre, producto.descripcion, producto.precio, producto.stock, producto.categoria)
+        cursor.execute(query, valores)
+        conexion.commit()
+        cursor.close()
+        conexion.close()
 
-    def buscar_por_id(self, id: int):
-        try:
-            query = "SELECT * FROM productos WHERE id = %s"
-            self.cursor.execute(query, (id,))
-            resultado = self.cursor.fetchone()
-            return resultado  # Retorna un diccionario con los datos del producto
-        except Exception as e:
-            print(f"Error al buscar producto por ID: {e}")
-            return None
+    def buscar_por_id(self, id: int) -> Optional[Producto]:
+        conexion = Conexion.obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        query = "SELECT * FROM productos WHERE id = %s"
+        cursor.execute(query, (id,))
+        resultado = cursor.fetchone()
+        cursor.close()
+        conexion.close()
 
-    def editar(self, id: int, producto):
-        try:
-            query = """
-            UPDATE productos
-            SET nombre = %s, descripcion = %s, precio = %s, stock = %s, categoria = %s
-            WHERE id = %s
-            """
-            values = (producto.nombre, producto.descripcion, producto.precio, producto.stock, producto.categoria, id)
-            self.cursor.execute(query, values)
-            self.db.commit()
-        except Exception as e:
-            self.db.rollback()
-            print(f"Error al editar producto: {e}")
+        if resultado:
+            return Producto(
+                id=resultado["id"],
+                nombre=resultado["nombre"],
+                descripcion=resultado["descripcion"],
+                precio=resultado["precio"],
+                stock=resultado["stock"],
+                categoria=resultado["categoria"]
+            )
+        return None
 
-class ProductoRepositorioMySQL:
-    def __init__(self):
-        self.db = Conexion.obtener_conexion()
-        self.cursor = self.db.cursor(dictionary=True)
+    def editar(self, id: int, producto: Producto) -> None:
+        conexion = Conexion.obtener_conexion()
+        cursor = conexion.cursor()
+        query = "UPDATE productos SET nombre=%s, descripcion=%s, precio=%s, stock=%s, categoria=%s WHERE id=%s"
+        valores = (producto.nombre, producto.descripcion, producto.precio, producto.stock, producto.categoria, id)
+        cursor.execute(query, valores)
+        conexion.commit()
+        cursor.close()
+        conexion.close()
 
-    def listar(self, categoria):
-        try:
-            query = "SELECT * FROM productos WHERE categoria = %s"
-            self.cursor.execute(query, (categoria,))
-            resultados = self.cursor.fetchall()
-            
-            productos = []
-            for fila in resultados:
-                # Aquí creamos el objeto Producto
-                producto = Producto(
-                    id=fila['id'],  # Este es el id de la base de datos
-                    nombre=fila['nombre'],
-                    descripcion=fila['descripcion'],
-                    precio=fila['precio'],
-                    stock=fila['stock'],
-                    categoria=fila['categoria'],
-                    created_at=fila['created_at']
-                )
-                productos.append(producto)
-            
-            return productos
-        
-        except Exception as e:
-            print(f"Error al listar productos: {e}")
-            return []
+    def listar(self, categoria: str) -> List[Producto]:
+        conexion = Conexion.obtener_conexion()
+        cursor = conexion.cursor(dictionary=True)
+        query = "SELECT * FROM productos WHERE categoria = %s"
+        cursor.execute(query, (categoria,))
+        resultados = cursor.fetchall()
+        cursor.close()
+        conexion.close()
 
+        return [Producto(
+            id=row["id"],
+            nombre=row["nombre"],
+            descripcion=row["descripcion"],
+            precio=row["precio"],
+            stock=row["stock"],
+            categoria=row["categoria"]
+        ) for row in resultados]
+
+    def eliminar(self, id: int) -> bool:
+        conexion = Conexion.obtener_conexion()
+        cursor = conexion.cursor()
+        query = "DELETE FROM productos WHERE id = %s"
+        cursor.execute(query, (id,))
+        conexion.commit()
+        filas_afectadas = cursor.rowcount
+        cursor.close()
+        conexion.close()
+        return filas_afectadas > 0

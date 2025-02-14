@@ -48,5 +48,4 @@ class ProductoService:
         if not producto_existente:
             return False  # Producto no encontrado
 
-        self.repositorio.eliminar(id)
-        return True
+        return self.repositorio.eliminar(id)

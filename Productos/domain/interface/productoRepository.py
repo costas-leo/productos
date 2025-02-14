@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional
 from Productos.domain.entities.productos import Producto 
 class ProductoRepositorio(ABC):  
+ 
 
     @abstractmethod
     def crear(self, producto: Producto) -> None:
@@ -21,4 +22,5 @@ class ProductoRepositorio(ABC):
     @abstractmethod
     def listar(self, categoria: str) -> List[Producto]:
         """Lista productos por categoría"""
-        pass
+        pass  
+
